@@ -285,3 +285,11 @@ services:
     eZ\Publish\Core\FieldType\RichText\CustomTagsValidator:
         public: false
         arguments: ['%ezplatform.ezrichtext.custom_tags%']
+
+    eZ\Publish\SPI\Persistence\Content\Handler:
+        alias: ezpublish.spi.persistence.cache.contentHandler
+
+    eZ\Publish\Core\FieldType\ImageAsset\NameableField:
+        autowire: true
+        tags:
+            - {name: ezpublish.fieldType.nameable, alias: ezimageasset}

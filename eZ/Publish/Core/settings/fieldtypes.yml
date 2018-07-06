@@ -571,3 +571,11 @@ services:
         arguments: [ "ezrecommendation" ]
         tags:
             - {name: ezpublish.fieldType, alias: ezrecommendation}
+
+    eZ\Publish\Core\FieldType\ImageAsset\Type:
+        parent: ezpublish.fieldType
+        tags:
+            - {name: ezpublish.fieldType, alias: ezimageasset}
+
+    ezpublish.fieldType.ezimageasset:
+        alias: eZ\Publish\Core\FieldType\ImageAsset\Type
