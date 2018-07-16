@@ -91,6 +91,13 @@ services:
         tags:
             - {name: ezpublish.fieldType.parameterProvider, alias: ezobjectrelationlist}
 
+    ezpublish.fieldType.ezimageasset.parameterProvider:
+        class: \eZ\Publish\Core\MVC\Symfony\FieldType\ImageAsset\ParameterProvider
+        arguments:
+            - "@ezpublish.api.service.content"
+        tags:
+            - {name: ezpublish.fieldType.parameterProvider, alias: ezobjectrelationlist}
+
     # Page
     ezpublish.fieldType.ezpage.pageService.factory:
         class: "%ezpublish.fieldType.ezpage.pageService.factory.class%"
