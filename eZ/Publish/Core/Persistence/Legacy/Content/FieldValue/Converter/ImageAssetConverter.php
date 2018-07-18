@@ -62,7 +62,7 @@ class ImageAssetConverter implements Converter
 
         $storageDef->dataInt1 = (isset($fieldSettings['selectionDefaultLocation'])
             ? (int)$fieldSettings['selectionDefaultLocation']
-            : 0);
+            : null);
         $storageDef->dataInt2 = (isset($fieldValidators['FileSizeValidator']['maxFileSize'])
             ? $fieldValidators['FileSizeValidator']['maxFileSize']
             : 0);
@@ -77,10 +77,6 @@ class ImageAssetConverter implements Converter
      */
     public function toFieldDefinition(StorageFieldDefinition $storageDef, FieldDefinition $fieldDef)
     {
-        $fieldDef->fieldTypeConstraints->fieldSettings = [
-            'selectionDefaultLocation' => $storageDef->dataInt1,
-        ];
-
         $fieldDef->fieldTypeConstraints = new FieldTypeConstraints(
             [
                 'validators' => [
@@ -90,6 +86,9 @@ class ImageAssetConverter implements Converter
                             : null),
                     ],
                 ],
+                'fieldSettings' => [
+                    'selectionDefaultLocation' => $storageDef->dataInt1,
+                ]
             ]
         );
     }

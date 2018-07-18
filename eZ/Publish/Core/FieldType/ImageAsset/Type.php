@@ -8,11 +8,14 @@ declare(strict_types=1);
 
 namespace eZ\Publish\Core\FieldType\ImageAsset;
 
+use eZ\Publish\API\Repository\ContentService;
+use eZ\Publish\API\Repository\ContentTypeService;
 use eZ\Publish\API\Repository\Values\ContentType\FieldDefinition;
 use eZ\Publish\Core\FieldType\FieldType;
 use eZ\Publish\API\Repository\Values\Content\ContentInfo;
 use eZ\Publish\Core\Base\Exceptions\InvalidArgumentType;
 use eZ\Publish\API\Repository\Values\Content\Relation;
+use eZ\Publish\Core\FieldType\ValidationError;
 use eZ\Publish\SPI\FieldType\Value as SPIValue;
 use eZ\Publish\Core\FieldType\Value as BaseValue;
 
@@ -34,6 +37,23 @@ class Type extends FieldType
         ],
     ];
 
+    /** @var \eZ\Publish\API\Repository\ContentService */
+    private $contentService;
+
+    /** @var \eZ\Publish\API\Repository\ContentTypeService */
+    private $contentTypeService;
+
+    /**
+     * @param \eZ\Publish\API\Repository\ContentService $contentService
+     * @param \eZ\Publish\API\Repository\ContentTypeService $contentTypeService
+     */
+    public function __construct(ContentService $contentService, ContentTypeService $contentTypeService)
+    {
+        $this->contentService = $contentService;
+        $this->contentTypeService = $contentTypeService;
+    }
+
+
     /**
      * @see \eZ\Publish\Core\FieldType\FieldType::validateFieldSettings()
      *
@@ -43,7 +63,31 @@ class Type extends FieldType
      */
     public function validateFieldSettings($fieldSettings)
     {
-        return [];
+        $validationErrors = [];
+
+        foreach ($fieldSettings as $name => $value) {
+            switch ($name) {
+                case 'selectionDefaultLocation':
+                    if (!is_int($value) && !is_string($value) && $value !== null) {
+                        $validationErrors[] = new ValidationError(
+                            "Setting '%setting%' value must be of either null, string or integer",
+                            null,
+                            ['%setting%' => $name],
+                            "[$name]"
+                        );
+                    }
+                    break;
+                default:
+                    $validationErrors[] = new ValidationError(
+                        "Setting '%setting%' is unknown",
+                        null,
+                        ['%setting%' => $name],
+                        "[$name]"
+                    );
+            }
+        }
+
+        return $validationErrors;
     }
 
     /**
@@ -55,7 +99,47 @@ class Type extends FieldType
      */
     public function validateValidatorConfiguration($validatorConfiguration)
     {
-        return [];
+        $validationErrors = [];
+
+        foreach ($validatorConfiguration as $validatorIdentifier => $parameters) {
+            switch ($validatorIdentifier) {
+                case 'FileSizeValidator':
+                    if (!array_key_exists('maxFileSize', $parameters)) {
+                        $validationErrors[] = new ValidationError(
+                            'Validator %validator% expects parameter %parameter% to be set.',
+                            null,
+                            array(
+                                '%validator%' => $validatorIdentifier,
+                                '%parameter%' => 'maxFileSize',
+                            ),
+                            "[$validatorIdentifier]"
+                        );
+                        break;
+                    }
+                    if (!is_int($parameters['maxFileSize']) && $parameters['maxFileSize'] !== null) {
+                        $validationErrors[] = new ValidationError(
+                            'Validator %validator% expects parameter %parameter% to be of %type%.',
+                            null,
+                            [
+                                '%validator%' => $validatorIdentifier,
+                                '%parameter%' => 'maxFileSize',
+                                '%type%' => 'integer',
+                            ],
+                            "[$validatorIdentifier][maxFileSize]"
+                        );
+                    }
+                    break;
+                default:
+                    $validationErrors[] = new ValidationError(
+                        "Validator '%validator%' is unknown",
+                        null,
+                        ['%validator%' => $validatorIdentifier],
+                        "[$validatorIdentifier]"
+                    );
+            }
+        }
+
+        return $validationErrors;
     }
 
     /**
@@ -68,7 +152,47 @@ class Type extends FieldType
      */
     public function validate(FieldDefinition $fieldDefinition, SPIValue $fieldValue)
     {
-        return [];
+        $errors = [];
+
+        if ($this->isEmptyValue($fieldValue)) {
+            return $errors;
+        }
+
+        $linkedContent = $this->contentService->loadContent($fieldValue->destinationContentId);
+        $linkedContentType = $this->contentTypeService->loadContentType($linkedContent->contentInfo->contentTypeId);
+        if ($linkedContentType->identifier !== 'image') {
+            $errors[] = new ValidationError(
+                'Only content type of image type can be linked. Selected content type is %type%',
+                null,
+                ['%type%' => $linkedContentType->identifier],
+                'destinationContentId'
+            );
+        }
+
+        foreach ((array)$fieldDefinition->getValidatorConfiguration() as $validatorIdentifier => $parameters) {
+            switch ($validatorIdentifier) {
+                case 'FileSizeValidator':
+                    if (empty($parameters['maxFileSize'])) {
+                        // No file size limit
+                        break;
+                    }
+
+                    /** @var \eZ\Publish\Core\FieldType\Image\Value $imageValueObject */
+                    $imageValueObject = $linkedContent->getField('image')->value;
+                    // Database stores maxFileSize in MB
+                    if (($parameters['maxFileSize'] * 1024 * 1024) < $imageValueObject->fileSize) {
+                        $errors[] = new ValidationError(
+                            'The file size cannot exceed %size% byte.',
+                            'The file size cannot exceed %size% bytes.',
+                            ['%size%' => $parameters['maxFileSize']],
+                            'fileSize'
+                        );
+                    }
+                    break;
+            }
+        }
+
+        return $errors;
     }
 
     /**

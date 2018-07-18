@@ -574,6 +574,7 @@ services:
 
     eZ\Publish\Core\FieldType\ImageAsset\Type:
         parent: ezpublish.fieldType
+        autowire: true
         tags:
             - {name: ezpublish.fieldType, alias: ezimageasset}
 
