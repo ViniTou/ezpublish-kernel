@@ -4029,7 +4029,7 @@ class ContentTypeServiceTest extends BaseContentTypeServiceTest
     }
 
     /**
-     * @covers \eZ\Publish\API\Repository\ContentTypeService::removeContentTypeTranslations
+     * @covers \eZ\Publish\API\Repository\ContentTypeService::removeContentTypeTranslation
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\BadStateException
      * @throws \eZ\Publish\API\Repository\Exceptions\InvalidArgumentException
@@ -4046,7 +4046,7 @@ class ContentTypeServiceTest extends BaseContentTypeServiceTest
 
         $contentType = $contentTypeService->loadContentType($contentTypeDraft->id);
 
-        self::assertEquals(
+        $this->assertEquals(
             [
                 'eng-US' => 'Blog post',
                 'ger-DE' => 'Blog-Eintrag',
@@ -4054,16 +4054,19 @@ class ContentTypeServiceTest extends BaseContentTypeServiceTest
             $contentType->getNames()
         );
 
-        $contentTypeService->removeContentTypeTranslations(
+        $contentTypeService->removeContentTypeTranslation(
             $contentTypeService->createContentTypeDraft($contentType),
-            ['ger-DE']
+            'ger-DE'
         );
 
-        self::assertEquals(
-            [
-                'eng-US' => 'Blog post',
-            ],
-            $contentTypeService->loadContentTypeDraft($contentType->id)->getNames()
-        );
+        $loadedContentTypeDraft = $contentTypeService->loadContentTypeDraft($contentType->id);
+
+        $this->assertArrayNotHasKey('ger-DE', $loadedContentTypeDraft->getNames());
+        $this->assertArrayNotHasKey('ger-DE', $loadedContentTypeDraft->getDescriptions());
+
+        foreach ($loadedContentTypeDraft->fieldDefinitions as $fieldDefinition) {
+            $this->assertArrayNotHasKey('ger-DE', $fieldDefinition->getNames());
+            $this->assertArrayNotHasKey('ger-DE', $fieldDefinition->getDescriptions());
+        }
     }
 }
