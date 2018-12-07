@@ -4,6 +4,7 @@ Changes affecting version compatibility with former or future versions.
 
 ## Changes
 
+* New method `\eZ\Publish\API\Repository\ContentTypeService::removeContentTypeTranslation` is introduced.
 * Handling of multilingual Content Types was improved in the following Public API methods:
     - `\eZ\Publish\API\Repository\ContentTypeService::updateContentTypeDraft`,
     - `\eZ\Publish\API\Repository\ContentTypeService::addFieldDefinition`,
