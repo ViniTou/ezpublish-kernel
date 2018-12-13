@@ -124,7 +124,8 @@ class ClassNameMatcherFactory implements MatcherFactoryInterface
             return $this->alreadyMatched[$viewType][$view];
         }
 
-        foreach ($this->matchConfig[$viewType] as $configHash) {
+        $matchedViews = [];
+        foreach ($this->matchConfig[$viewType] as $key => $configHash) {
             $hasMatched = true;
             $matcher = null;
             foreach ($configHash['match'] as $matcherIdentifier => $value) {
@@ -136,8 +137,12 @@ class ClassNameMatcherFactory implements MatcherFactoryInterface
             }
 
             if ($hasMatched) {
-                return $this->alreadyMatched[$viewType][$view] = $configHash + array('matcher' => $matcher);
+                $matchedViews[] = $configHash + array('matcher' => $matcher);
             }
+        }
+
+        if (!empty($matchedViews)) {
+            return $this->alreadyMatched[$viewType][$view] = end($matchedViews);
         }
 
         return $this->alreadyMatched[$viewType][$view] = null;
