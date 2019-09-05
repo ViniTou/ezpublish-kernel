@@ -55,6 +55,8 @@ Changes affecting version compatibility with former or future versions.
 * Deprecated `eZ\Publish\SPI\FieldType\EventListener` interface, `eZ\Publish\SPI\FieldType\Event` class and
   `eZ\Publish\SPI\FieldType\Events` namespace have been dropped.
 
+* Deprecated Symfony framework templating component integration has been dropped.
+
 ## Deprecated features
 
 * Using SiteAccess-aware `pagelayout` setting is derecated, use `page_layout` instead.
